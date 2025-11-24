@@ -1,0 +1,131 @@
+set sql_safe_updates=0;
+select * from salesorder;
+select * from orderdetail;
+alter table orderdetail add price decimal(20,4);
+update orderdetail set price=(unitPrice*quantity)*(1-discount);
+select * from orderdetail;
+select min(price),max(price),round(avg(price),2),round(std(price),2) from orderdetail;
+# Category wise total sales
+select categoryName,sum(price) as Totalsales from orderdetail
+natural join product
+natural join category
+group by categoryName order by Totalsales desc;
+# Top 10 product name in category name 'beverages' by total sales
+select productName,categoryName, sum(price) as Totalsales from orderdetail
+natural join product
+natural join category
+where categoryName='Beverages'
+group by productName,categoryName
+order by Totalsales desc limit 10;
+# Employee wise total sales
+select concat(firstname," ",lastname) as Employee,sum(price) as Totalsales from orderdetail
+natural join northwind.order
+natural join employee
+group by Employee order by Totalsales desc;
+# Country wise total sales 
+select * from territory;
+select country, sum(price) as TotalSales from customer
+natural join northwind.order
+natural join orderdetail
+group by country 
+order by Totalsales desc;
+# year wise sales based on shipped date in order
+select year(shippedDate), sum(price) as Totalsales from northwind.order
+natural join orderdetail
+group by year(shippedDate)
+order by Totalsales asc;
+# Product name wise total sales
+select productName,sum(price) as Totalsales from orderdetail
+natural join product
+group by productName
+order by Totalsales desc;
+# Country wise total quantity
+select country,sum(quantity) as TotalQuantity from customer
+natural join orderdetail
+group by country
+order by TotalQuantity desc;
+# Company wise total sales and total quantity
+select companyName,country,sum(quantity) as TotalQuantity,sum(price) as Totalsales from customer
+natural join northwind.order
+natural join orderdetail
+group by companyName,country
+order by Totalsales desc;
+# Year wise sales
+select year(orderDate), sum(price) as Totalsales from orderdetail
+natural join northwind.order
+group by year(orderDate)
+order by Totalsales desc;
+select * from northwind.order;
+# total sales or the month of december 2007
+select sum(price) as Totalsales from orderdetail
+natural join northwind.order
+where shippedDate between date('2007-12-01') and date('2007-12-31');
+# Total quantity & country wise sales for first quarter of 2007
+select country,sum(quantity) as TotalQuantity, sum(price) as Totalsales from orderdetail
+natural join northwind.order
+natural join customer
+where quarter(shippedDate)=1 and year(shippedDate)=2007
+group by country
+order by Totalsales desc;
+# Top 10 suppilers by companyname
+select * from product;
+# create purchases column
+# Since null values in units in stock, units on order, let's replace null with 1.
+UPDATE product
+SET Purchasequantity = (COALESCE(unitsOnOrder, 1) + COALESCE(unitsInStock, 1)) * unitPrice;
+alter table product add Purchasequantity float(10);
+update product set Purchasequantity=(unitsOnOrder+unitsInStock)*unitPrice;
+select Purchasequantity from product;
+select companyName,sum(Purchasequantity) as TotalQuantity from product 
+natural join supplier
+group by companyName
+order by TotalQuantity desc limit 10;
+# What product supplied by Supplier ZPYVS?
+select companyName, productName, sum(Purchasequantity) as TotalQuantity  from product
+natural join supplier
+where companyName= 'Supplier ZPYVS' group by productName order by TotalQuantity desc;
+# Which shipper company shipped most fright?
+select companyname, sum(freight) as TotalFreight from northwind.order
+natural join shipper
+group by companyname
+order by TotalFreight desc;
+select * from category;
+# Which countries supplied dairy products
+select country,categoryName,sum(Purchasequantity) from product
+natural join category
+natural join supplier
+where categoryName='Dairy Products'
+group by country
+order by sum(Purchasequantity) desc;
+# Yearwise category wise sales
+SELECT categoryName, YEAR(shippeddate) AS year, SUM(price) AS TotalSales
+FROM northwind.order
+NATURAL JOIN orderdetail
+NATURAL JOIN product
+NATURAL JOIN category
+GROUP BY categoryName, YEAR(shippeddate)
+ORDER BY year DESC
+LIMIT 1000;
+# category wise and product wise sales
+select categoryName,productName,sum(price) from orderdetail
+natural join product
+natural join category
+group by categoryName,productName;
+select * from product;
+# Caterory wise product wise discountinued with units in stock,Quamtity in unit
+select categoryName,productName,discontinued,unitsInStock,Quantityperunit from product
+natural join category
+where discontinued=1 order by unitsInStock desc;
+# Top 10 most expensive products with categories
+select productName,categoryName,unitPrice from product
+natural join category
+order by unitPrice desc limit 10;
+# Customers and suppliers by city
+select city,companyname,'Customer' as 'Realtioship' from customer
+union
+SELECT city,companyname,'supplier' from supplier
+order by city;
+
+
+
+ 
